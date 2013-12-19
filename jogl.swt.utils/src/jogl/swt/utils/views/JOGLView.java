@@ -21,15 +21,12 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.jogamp.opengl.swt.GLCanvas;
 
-public class JOGLView extends ViewPart implements GLEventListener{
+public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private GLCanvas glCanvas;
 	
 	private final Timer timer = new Timer("GL Refresh", true);
 	
-	public JOGLView() {
-	}
-	
-	protected void internalDisplay(GL4 gl) {}
+	protected abstract void internalDisplay(GL4 gl);
 
 	@Override
 	public void createPartControl(Composite parent) {
