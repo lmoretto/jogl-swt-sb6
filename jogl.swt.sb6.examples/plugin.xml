@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="jogl.swt.sb6.examples.maincategory"
+            name="OpenGL SuperBible 6 Code Examples">
+      </category>
+      <category
+            id="jogl.swt.sb6.examples.chapter2"
+            name="Chapter 2"
+            parentCategory="jogl.swt.sb6.examples.maincategory">
+      </category>
+      <view
+            category="jogl.swt.sb6.examples.chapter2"
+            class="jogl.swt.sb6.examples.chapter2.Ch2Pg14"
+            id="jogl.swt.sb6.examples.chapter2.pg14"
+            name="Ch2Pg14"
+            restorable="true">
+      </view>
+   </extension>
+
+</plugin>
