@@ -1,5 +1,7 @@
+bin
 *.class
-
+*.so
+*.metadata
 # Package Files #
 *.jar
 *.war
