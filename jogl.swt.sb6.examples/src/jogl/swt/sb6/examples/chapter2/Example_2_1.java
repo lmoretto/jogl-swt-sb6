@@ -8,7 +8,7 @@ import javax.media.opengl.GL4;
 
 import jogl.swt.utils.views.JOGLView;
 
-public class Ch2Pg14 extends JOGLView {
+public class Example_2_1 extends JOGLView {
 
 	@Override
 	protected void internalDisplay(GL4 gl) {

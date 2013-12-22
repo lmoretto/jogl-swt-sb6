@@ -14,16 +14,16 @@
       </category>
       <view
             category="jogl.swt.sb6.examples.chapter2"
-            class="jogl.swt.sb6.examples.chapter2.Ch2Pg14"
-            id="jogl.swt.sb6.examples.chapter2.pg14"
-            name="Ch2Pg14"
+            class="jogl.swt.sb6.examples.chapter2.Example_2_1"
+            id="jogl.swt.sb6.examples.chapter2.example_2_1"
+            name="Example_2_1"
             restorable="true">
       </view>
       <view
             category="jogl.swt.sb6.examples.chapter2"
-            class="jogl.swt.sb6.examples.chapter2.Ch2Pg16"
-            id="jogl.swt.sb6.examples.chapter2.pg16"
-            name="Ch2Pg16"
+            class="jogl.swt.sb6.examples.chapter2.Example_2_2"
+            id="jogl.swt.sb6.examples.chapter2.example_2_2"
+            name="Example_2_2"
             restorable="true">
       </view>
    </extension>
