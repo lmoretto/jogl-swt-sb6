@@ -1,7 +1,8 @@
 package jogl.swt.utils.views;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.media.opengl.GL4;
 import javax.media.opengl.GLAutoDrawable;
@@ -24,7 +25,11 @@ import com.jogamp.opengl.swt.GLCanvas;
 public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private GLCanvas glCanvas;
 	
-	private final Timer timer = new Timer("GL Refresh", true);
+	private final ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
+
+	private Runnable displayTask;
+
+	private ScheduledFuture<?> future;
 	
 	protected abstract void internalDisplay(GL4 gl);
 
@@ -57,28 +62,41 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			}
 		});
 		
-		Button pauseResumeButton = new Button(buttonsContainer, SWT.NONE);
+		final Button pauseResumeButton = new Button(buttonsContainer, SWT.NONE);
 		pauseResumeButton.setText("Pause");
 		pauseResumeButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				super.widgetSelected(e);
+				
+				if(future != null) {
+					future.cancel(false);
+					future = null;
+					pauseResumeButton.setText("Resume");
+				}
+				else {
+					future = timer.scheduleAtFixedRate(displayTask, 0, 16, TimeUnit.MILLISECONDS);
+					pauseResumeButton.setText("Pause");
+				}
 			}
 		});
 		
-		TimerTask task = new TimerTask() {
+		displayTask = new Runnable() {
 			@Override
 			public void run() {
 				glCanvas.display();
 			}
 		};
-		timer.scheduleAtFixedRate(task, 0, 16);
+		future = timer.scheduleAtFixedRate(displayTask, 0, 16, TimeUnit.MILLISECONDS);
 
 	}
 	
 	@Override
 	public void dispose() {
-		timer.cancel();
+		if(future != null) {
+			future.cancel(false);
+		}
+		timer.shutdown();
 		super.dispose();
 	}
 
