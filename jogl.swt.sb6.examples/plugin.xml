@@ -19,6 +19,13 @@
             name="Ch2Pg14"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter2"
+            class="jogl.swt.sb6.examples.chapter2.Ch2Pg16"
+            id="jogl.swt.sb6.examples.chapter2.pg16"
+            name="Ch2Pg16"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
