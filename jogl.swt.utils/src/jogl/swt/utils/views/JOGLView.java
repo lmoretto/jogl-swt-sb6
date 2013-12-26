@@ -31,7 +31,9 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 
 	private ScheduledFuture<?> future;
 	
-	protected abstract void internalDisplay(GL4 gl);
+	protected abstract void render(GL4 gl);
+	protected abstract void startup(GL4 gl);
+	protected abstract void shutdown(GL4 gl);
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -110,13 +112,12 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	@Override
 	public void display(GLAutoDrawable drawable) {
 		final GL4 gl = (GL4) drawable.getGL();
-		internalDisplay(gl);
+		render(gl);
 	}
 
 	@Override
 	public void dispose(GLAutoDrawable drawable) {
-		// TODO Auto-generated method stub
-		
+		shutdown((GL4) drawable.getGL());
 	}
 	
 	@Override
@@ -124,6 +125,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		System.out.println(drawable.getGL().getContext().getGLVersion());
 		if(!drawable.getGL().isGL4())
 			throw new RuntimeException("OpenGL 4 NOT supported on this machine");
+		startup((GL4) drawable.getGL());
 	}
 
 	@Override
