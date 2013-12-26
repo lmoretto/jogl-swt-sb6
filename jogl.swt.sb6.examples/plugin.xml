@@ -26,6 +26,13 @@
             name="Example_2_2"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter2"
+            class="jogl.swt.sb6.examples.chapter2.Example_2_3"
+            id="jogl.swt.sb6.examples.chapter2.example_2_3"
+            name="Example_2_3"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
