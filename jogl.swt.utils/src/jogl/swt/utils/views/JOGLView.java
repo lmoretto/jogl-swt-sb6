@@ -4,6 +4,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.media.opengl.DebugGL4;
 import javax.media.opengl.GL4;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
@@ -125,6 +126,9 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		System.out.println(drawable.getGL().getContext().getGLVersion());
 		if(!drawable.getGL().isGL4())
 			throw new RuntimeException("OpenGL 4 NOT supported on this machine");
+		DebugGL4 dbg = new DebugGL4((GL4) drawable.getGL());
+		drawable.setGL(dbg);
+		
 		startup((GL4) drawable.getGL());
 	}
 
