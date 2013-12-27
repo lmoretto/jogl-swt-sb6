@@ -4,7 +4,9 @@ import static javax.media.opengl.GL4.*;
 
 import javax.media.opengl.GL4;
 
-public class Example_2_3 extends Example_2_2 {
+import jogl.swt.utils.views.JOGLView;
+
+public class Example_2_3 extends JOGLView {
 	private int[] vertexArray = new int[1];
 	
 	private static final String[] V_SHADER_SOURCE = { 
@@ -27,7 +29,6 @@ public class Example_2_3 extends Example_2_2 {
 	
 	@Override
 	protected void render(GL4 gl) {
-		super.render(gl);
 		long currentTime = System.currentTimeMillis();
 		gl.glPointSize(40.0f * (float)(Math.sin(currentTime / 100.0) * 0.5 + 0.5));
 		
@@ -36,14 +37,12 @@ public class Example_2_3 extends Example_2_2 {
 
 	@Override
 	protected void startup(GL4 gl) {
-		super.startup(gl);
 		gl.glGenVertexArrays(vertexArray.length, vertexArray, 0);
 		gl.glBindVertexArray(vertexArray[0]);
 	}
 
 	@Override
 	protected void shutdown(GL4 gl) {
-		super.shutdown(gl);
 		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
 	}
 	

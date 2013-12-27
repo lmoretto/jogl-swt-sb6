@@ -2,6 +2,7 @@ package jogl.swt.utils.views;
 
 import static javax.media.opengl.GL4.*;
 
+import java.nio.FloatBuffer;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -127,6 +128,13 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		
 		if(useShaders)
 			gl.glUseProgram(renderingProgram);
+		
+		FloatBuffer black = FloatBuffer.allocate(4);
+		black.put(0, 0.0f);
+		black.put(1, 0.0f);
+		black.put(2, 0.0f);
+		black.put(3, 1.0f);
+		gl.glClearBufferfv(GL_COLOR, 0, black);
 		
 		render(gl);
 	}
