@@ -1,5 +1,7 @@
 package jogl.swt.utils.views;
 
+import static javax.media.opengl.GL4.*;
+
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +25,7 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.jogamp.opengl.swt.GLCanvas;
 
+//TODO leggere shader da file, fare esempio primo triangolo, gestione errori
 public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private GLCanvas glCanvas;
 	
@@ -31,10 +34,18 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private Runnable displayTask;
 
 	private ScheduledFuture<?> future;
+
+	private int renderingProgram;
+
+	private boolean useShaders = false;
 	
 	protected abstract void render(GL4 gl);
 	protected abstract void startup(GL4 gl);
 	protected abstract void shutdown(GL4 gl);
+	
+	protected String[] getShaderSourceLines(int shaderType) {
+		return null;
+	}
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -113,12 +124,21 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	@Override
 	public void display(GLAutoDrawable drawable) {
 		final GL4 gl = (GL4) drawable.getGL();
+		
+		if(useShaders)
+			gl.glUseProgram(renderingProgram);
+		
 		render(gl);
 	}
 
 	@Override
 	public void dispose(GLAutoDrawable drawable) {
-		shutdown((GL4) drawable.getGL());
+		GL4 gl = (GL4) drawable.getGL();
+		
+		if(useShaders)
+			gl.glDeleteProgram(renderingProgram);
+		
+		shutdown(gl);
 	}
 	
 	@Override
@@ -129,7 +149,11 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		DebugGL4 dbg = new DebugGL4((GL4) drawable.getGL());
 		drawable.setGL(dbg);
 		
-		startup((GL4) drawable.getGL());
+		final GL4 gl4 = (GL4) drawable.getGL();
+		
+		createShaderPrograms(gl4);
+		
+		startup(gl4);
 	}
 
 	@Override
@@ -137,6 +161,41 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			int height) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	private void createShaderPrograms(GL4 gl) {
+		final String[] vShaderSource = getShaderSourceLines(GL_VERTEX_SHADER);
+		final String[] fShaderSource = getShaderSourceLines(GL_FRAGMENT_SHADER);
+		
+		if(vShaderSource != null && fShaderSource != null) {
+			useShaders = true;
+			
+			int[] lengths = new int[vShaderSource.length];
+			for (int i = 0; i < vShaderSource.length; i++) {
+				lengths[i] = vShaderSource[i].length();
+			}
+			
+			int vShader = gl.glCreateShader(GL_VERTEX_SHADER);
+			gl.glShaderSource(vShader, vShaderSource.length, vShaderSource, lengths, 0);
+			gl.glCompileShader(vShader);
+			
+			lengths = new int[fShaderSource.length];
+			for (int i = 0; i < fShaderSource.length; i++) {
+				lengths[i] = fShaderSource[i].length();
+			}
+			
+			int fShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
+			gl.glShaderSource(fShader, fShaderSource.length, fShaderSource, lengths, 0);
+			gl.glCompileShader(fShader);
+			
+			renderingProgram = gl.glCreateProgram();
+			gl.glAttachShader(renderingProgram, vShader);
+			gl.glAttachShader(renderingProgram, fShader);
+			gl.glLinkProgram(renderingProgram);
+			
+			gl.glDeleteShader(vShader);
+			gl.glDeleteShader(fShader);
+		}
 	}
 
 }
