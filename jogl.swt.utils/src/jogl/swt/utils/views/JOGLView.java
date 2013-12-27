@@ -16,6 +16,7 @@ import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
+import javax.media.opengl.glu.GLU;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -29,7 +30,6 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.jogamp.opengl.swt.GLCanvas;
 
-//TODO leggere shader da file, fare esempio primo triangolo, gestione errori
 public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private GLCanvas glCanvas;
 	
@@ -42,6 +42,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private int renderingProgram;
 
 	private boolean useShaders = false;
+	
+	private GLU glu = new GLU();
 	
 	protected abstract void render(GL4 gl);
 	protected abstract void startup(GL4 gl);
@@ -179,7 +181,9 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		final String[] fShaderSource = getShaderSourceLines(GL_FRAGMENT_SHADER);
 		
 		if(vShaderSource != null && fShaderSource != null) {
-			useShaders = true;
+			int[] vertCompiled = new int[1];
+			int[] fragCompiled = new int[1];
+			int[] progLinked = new int[1];
 			
 			int[] lengths = new int[vShaderSource.length];
 			for (int i = 0; i < vShaderSource.length; i++) {
@@ -190,6 +194,19 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			gl.glShaderSource(vShader, vShaderSource.length, vShaderSource, lengths, 0);
 			gl.glCompileShader(vShader);
 			
+			checkOpenGLError(gl);
+			gl.glGetShaderiv(vShader, GL_COMPILE_STATUS, vertCompiled, 0);
+			if(vertCompiled[0] == 1) {
+				System.out.println("Vertex shader compilation succeded.");
+			}
+			else {
+				System.out.println("Vertex shader compilation failed.");
+				printShaderLog(gl, vShader);
+				gl.glDeleteShader(vShader);
+				checkOpenGLError(gl);
+				return;
+			}
+			
 			lengths = new int[fShaderSource.length];
 			for (int i = 0; i < fShaderSource.length; i++) {
 				lengths[i] = fShaderSource[i].length();
@@ -199,6 +216,20 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			gl.glShaderSource(fShader, fShaderSource.length, fShaderSource, lengths, 0);
 			gl.glCompileShader(fShader);
 			
+			checkOpenGLError(gl);
+			gl.glGetShaderiv(fShader, GL_COMPILE_STATUS, fragCompiled, 0);
+			if(fragCompiled[0] == 1) {
+				System.out.println("Fragment shader compilation succeded.");
+			}
+			else {
+				System.out.println("Fragment shader compilation failed.");
+				printShaderLog(gl, fShader);
+				gl.glDeleteShader(vShader);
+				gl.glDeleteShader(fShader);
+				checkOpenGLError(gl);
+				return;
+			}
+			
 			renderingProgram = gl.glCreateProgram();
 			gl.glAttachShader(renderingProgram, vShader);
 			gl.glAttachShader(renderingProgram, fShader);
@@ -206,6 +237,20 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			
 			gl.glDeleteShader(vShader);
 			gl.glDeleteShader(fShader);
+			
+			checkOpenGLError(gl);
+			gl.glGetProgramiv(renderingProgram, GL_LINK_STATUS, progLinked, 0);
+			if(progLinked[0] == 1) {
+				System.out.println("Program linking succeded.");
+			}
+			else {
+				System.out.println("Program linking failed.");
+				printProgramLog(gl, renderingProgram);
+				gl.glDeleteProgram(renderingProgram);
+				checkOpenGLError(gl);
+			}
+			
+			useShaders = true;
 		}
 	}
 	
@@ -231,6 +276,57 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		}
 		
 		return ret;
+	}
+	
+	//Error utilities
+	public boolean checkOpenGLError(GL4 gl) {
+		boolean foundError = false;
+		
+		int glErr = gl.glGetError();
+		
+		while(glErr != GL_NO_ERROR) {
+			System.err.println("glError: " + glu.gluErrorString(glErr));
+			foundError = true;
+			glErr = gl.glGetError();
+		}
+		
+		return foundError;
+	}
+	
+	public void printShaderLog(GL4 gl, int shader) {
+		int[] len = new int[1];
+		int[] charsWritten = new int[1];
+		byte[] log = null;
+		
+		//Get the length of the shader compilation log
+		gl.glGetShaderiv(shader, GL_INFO_LOG_LENGTH, len, 0);
+		
+		if(len[0] > 0) {
+			log = new byte[len[0]];
+			gl.glGetShaderInfoLog(shader, len[0], charsWritten, 0, log, 0);
+			System.out.println("Shader Info Log:");
+			for(int i = 0; i < log.length; i++) {
+				System.out.print((char) log[i]);
+			}
+		}
+	}
+	
+	public void printProgramLog(GL4 gl, int program) {
+		int[] len = new int[1];
+		int[] charsWritten = new int[1];
+		byte[] log = null;
+		
+		//Get the length of the program linking log
+		gl.glGetProgramiv(program, GL_INFO_LOG_LENGTH, len, 0);
+		
+		if(len[0] > 0) {
+			log = new byte[len[0]];
+			gl.glGetProgramInfoLog(program, len[0], charsWritten, 0, log, 0);
+			System.out.println("Program Info Log:");
+			for(int i = 0; i < log.length; i++) {
+				System.out.print((char) log[i]);
+			}
+		}
 	}
 
 }
