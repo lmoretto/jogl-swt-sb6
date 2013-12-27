@@ -2,7 +2,10 @@ package jogl.swt.utils.views;
 
 import static javax.media.opengl.GL4.*;
 
+import java.io.InputStream;
 import java.nio.FloatBuffer;
+import java.util.Scanner;
+import java.util.Vector;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -204,6 +207,30 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			gl.glDeleteShader(vShader);
 			gl.glDeleteShader(fShader);
 		}
+	}
+	
+	public static String[] readShaderSource(InputStream is) {
+		String[] ret = null;
+		
+		if(is != null) {
+			Vector<String> lines = new Vector<String>();
+			Scanner sc;
+			sc = new Scanner(is);
+			
+			while(sc.hasNext()) {
+				lines.addElement(sc.nextLine());
+			}
+			
+			sc.close();
+			
+			ret = new String[lines.size()];
+			
+			for(int i = 0; i < lines.size(); i++) {
+				ret[i] = lines.elementAt(i) + "\n";
+			}
+		}
+		
+		return ret;
 	}
 
 }
