@@ -4,6 +4,8 @@ import static javax.media.opengl.GL4.*;
 
 import java.io.InputStream;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Vector;
 import java.util.concurrent.ScheduledFuture;
@@ -31,6 +33,30 @@ import org.eclipse.ui.part.ViewPart;
 import com.jogamp.opengl.swt.GLCanvas;
 
 public abstract class JOGLView extends ViewPart implements GLEventListener{
+	public static enum ShaderType {
+		VERTEX_SHADER(GL_VERTEX_SHADER, "Vertex shader"),
+		FRAGMENT_SHADER(GL_FRAGMENT_SHADER, "Fragment shader"),
+		TESS_CONTROL_SHADER(GL_TESS_CONTROL_SHADER, "Tesselation control shader"),
+		TESS_EVALUATION_SHADER(GL_TESS_EVALUATION_SHADER, "Tesselation evaluation shader");
+		
+		private ShaderType(int glShaderTypeId, String description) {
+			this.glShaderTypeId = glShaderTypeId;
+			this.description = description;
+		}
+		
+		private int getGlShaderTypeId() {
+			return glShaderTypeId;
+		}
+		
+		private String getDescription() {
+			return description;
+		}
+		
+		private int glShaderTypeId;
+		private String description;
+	}
+	
+	
 	private GLCanvas glCanvas;
 	
 	private final ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1);
@@ -49,7 +75,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	protected abstract void startup(GL4 gl);
 	protected abstract void shutdown(GL4 gl);
 	
-	protected String[] getShaderSourceLines(int shaderType) {
+	protected String[] getShaderSourceLines(ShaderType shaderType) {
 		return null;
 	}
 
@@ -177,66 +203,55 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	}
 	
 	private void createShaderPrograms(GL4 gl) {
-		final String[] vShaderSource = getShaderSourceLines(GL_VERTEX_SHADER);
-		final String[] fShaderSource = getShaderSourceLines(GL_FRAGMENT_SHADER);
+		List<Integer> compiledShaders = new ArrayList<Integer>();
 		
-		if(vShaderSource != null && fShaderSource != null) {
-			int[] vertCompiled = new int[1];
-			int[] fragCompiled = new int[1];
+		for(ShaderType shaderType : ShaderType.values()) {
+			String[] shaderSource = getShaderSourceLines(shaderType);
+			
+			if(shaderSource != null) {
+				int[] shaderCompiled = new int[1];
+				
+				int[] lengths = new int[shaderSource.length];
+				for (int i = 0; i < shaderSource.length; i++) {
+					lengths[i] = shaderSource[i].length();
+				}
+				
+				int shader = gl.glCreateShader(shaderType.getGlShaderTypeId());
+				gl.glShaderSource(shader, shaderSource.length, shaderSource, lengths, 0);
+				gl.glCompileShader(shader);
+				
+				checkOpenGLError(gl);
+				gl.glGetShaderiv(shader, GL_COMPILE_STATUS, shaderCompiled, 0);
+				if(shaderCompiled[0] == 1) {
+					System.out.println(shaderType.getDescription() + " compilation succeded.");
+					compiledShaders.add(shader);
+				}
+				else {
+					System.out.println(shaderType.getDescription() + " compilation failed.");
+					printShaderLog(gl, shader);
+					
+					for(Integer previousShader : compiledShaders)
+						gl.glDeleteShader(previousShader);
+					
+					gl.glDeleteShader(shader);
+					checkOpenGLError(gl);
+					return;
+				}
+			}
+		}
+		
+		if(compiledShaders.size() > 0) {
 			int[] progLinked = new int[1];
-			
-			int[] lengths = new int[vShaderSource.length];
-			for (int i = 0; i < vShaderSource.length; i++) {
-				lengths[i] = vShaderSource[i].length();
-			}
-			
-			int vShader = gl.glCreateShader(GL_VERTEX_SHADER);
-			gl.glShaderSource(vShader, vShaderSource.length, vShaderSource, lengths, 0);
-			gl.glCompileShader(vShader);
-			
-			checkOpenGLError(gl);
-			gl.glGetShaderiv(vShader, GL_COMPILE_STATUS, vertCompiled, 0);
-			if(vertCompiled[0] == 1) {
-				System.out.println("Vertex shader compilation succeded.");
-			}
-			else {
-				System.out.println("Vertex shader compilation failed.");
-				printShaderLog(gl, vShader);
-				gl.glDeleteShader(vShader);
-				checkOpenGLError(gl);
-				return;
-			}
-			
-			lengths = new int[fShaderSource.length];
-			for (int i = 0; i < fShaderSource.length; i++) {
-				lengths[i] = fShaderSource[i].length();
-			}
-			
-			int fShader = gl.glCreateShader(GL_FRAGMENT_SHADER);
-			gl.glShaderSource(fShader, fShaderSource.length, fShaderSource, lengths, 0);
-			gl.glCompileShader(fShader);
-			
-			checkOpenGLError(gl);
-			gl.glGetShaderiv(fShader, GL_COMPILE_STATUS, fragCompiled, 0);
-			if(fragCompiled[0] == 1) {
-				System.out.println("Fragment shader compilation succeded.");
-			}
-			else {
-				System.out.println("Fragment shader compilation failed.");
-				printShaderLog(gl, fShader);
-				gl.glDeleteShader(vShader);
-				gl.glDeleteShader(fShader);
-				checkOpenGLError(gl);
-				return;
-			}
-			
+						
 			renderingProgram = gl.glCreateProgram();
-			gl.glAttachShader(renderingProgram, vShader);
-			gl.glAttachShader(renderingProgram, fShader);
+			
+			for(Integer shader : compiledShaders)
+				gl.glAttachShader(renderingProgram, shader);
+			
 			gl.glLinkProgram(renderingProgram);
 			
-			gl.glDeleteShader(vShader);
-			gl.glDeleteShader(fShader);
+			for(Integer shader : compiledShaders)
+				gl.glDeleteShader(shader);
 			
 			checkOpenGLError(gl);
 			gl.glGetProgramiv(renderingProgram, GL_LINK_STATUS, progLinked, 0);
@@ -248,6 +263,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 				printProgramLog(gl, renderingProgram);
 				gl.glDeleteProgram(renderingProgram);
 				checkOpenGLError(gl);
+				return;
 			}
 			
 			useShaders = true;

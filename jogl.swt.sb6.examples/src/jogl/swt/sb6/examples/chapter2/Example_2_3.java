@@ -47,10 +47,10 @@ public class Example_2_3 extends JOGLView {
 	}
 	
 	@Override
-	protected String[] getShaderSourceLines(int shaderType) {
-		if(shaderType == GL_VERTEX_SHADER)
+	protected String[] getShaderSourceLines(ShaderType shaderType) {
+		if(shaderType == ShaderType.VERTEX_SHADER)
 			return V_SHADER_SOURCE;
-		else if (shaderType == GL_FRAGMENT_SHADER)
+		else if (shaderType == ShaderType.FRAGMENT_SHADER)
 			return F_SHADER_SOURCE;
 		else
 			return super.getShaderSourceLines(shaderType);
