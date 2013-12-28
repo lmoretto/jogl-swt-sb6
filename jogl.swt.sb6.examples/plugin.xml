@@ -40,6 +40,18 @@
             name="Example_2_4"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter3"
+            class="jogl.swt.sb6.examples.chapter3.Example_3_1"
+            id="jogl.swt.sb6.examples.chapter3.example_3_1"
+            name="Example_3_1"
+            restorable="true">
+      </view>
+      <category
+            id="jogl.swt.sb6.examples.chapter3"
+            name="Chapter 3"
+            parentCategory="jogl.swt.sb6.examples.maincategory">
+      </category>
    </extension>
 
 </plugin>

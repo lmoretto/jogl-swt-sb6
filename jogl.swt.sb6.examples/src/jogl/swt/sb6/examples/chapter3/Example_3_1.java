@@ -1,0 +1,50 @@
+package jogl.swt.sb6.examples.chapter3;
+
+import static javax.media.opengl.GL4.*;
+
+import java.nio.FloatBuffer;
+
+import javax.media.opengl.GL4;
+
+import jogl.swt.utils.views.JOGLView;
+
+public class Example_3_1 extends JOGLView {
+	private int[] vertexArray = new int[1];
+
+	@Override
+	protected void render(GL4 gl) {
+		long currentTime = System.currentTimeMillis();
+		
+		FloatBuffer attrib = FloatBuffer.allocate(4);
+		attrib.put(0, (float)(Math.sin(currentTime / 1000.0) * 0.5));
+		attrib.put(1, (float)(Math.cos(currentTime / 1000.0) * 0.6));
+		attrib.put(2, 0.0f);
+		attrib.put(3,  0.0f);
+		
+		gl.glVertexAttrib4fv(0, attrib);
+		
+		gl.glDrawArrays(GL_TRIANGLES, 0, 3);
+	}
+
+	@Override
+	protected void startup(GL4 gl) {
+		gl.glGenVertexArrays(vertexArray.length, vertexArray, 0);
+		gl.glBindVertexArray(vertexArray[0]);
+	}
+
+	@Override
+	protected void shutdown(GL4 gl) {
+		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
+	}
+	
+	@Override
+	protected String[] getShaderSourceLines(int shaderType) {
+		if(shaderType == GL_VERTEX_SHADER)
+			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/vshader_3_1.glsl"));
+		else if(shaderType == GL_FRAGMENT_SHADER)
+			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter2/fshader_2_4.glsl"));
+		else
+			return super.getShaderSourceLines(shaderType);
+	}
+
+}
