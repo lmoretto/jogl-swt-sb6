@@ -52,6 +52,13 @@
             name="Chapter 3"
             parentCategory="jogl.swt.sb6.examples.maincategory">
       </category>
+      <view
+            category="jogl.swt.sb6.examples.chapter3"
+            class="jogl.swt.sb6.examples.chapter3.Example_3_2"
+            id="jogl.swt.sb6.examples.chapter3.example_3_2"
+            name="Example_3_2"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
