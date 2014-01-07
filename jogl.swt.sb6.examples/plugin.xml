@@ -73,6 +73,13 @@
             name="Example_3_4"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter3"
+            class="jogl.swt.sb6.examples.chapter3.Example_3_5"
+            id="jogl.swt.sb6.examples.chapter3.example_3_5"
+            name="Example_3_5"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
