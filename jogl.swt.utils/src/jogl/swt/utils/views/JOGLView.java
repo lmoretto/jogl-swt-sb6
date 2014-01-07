@@ -37,7 +37,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		VERTEX_SHADER(GL_VERTEX_SHADER, "Vertex shader"),
 		FRAGMENT_SHADER(GL_FRAGMENT_SHADER, "Fragment shader"),
 		TESS_CONTROL_SHADER(GL_TESS_CONTROL_SHADER, "Tesselation control shader"),
-		TESS_EVALUATION_SHADER(GL_TESS_EVALUATION_SHADER, "Tesselation evaluation shader");
+		TESS_EVALUATION_SHADER(GL_TESS_EVALUATION_SHADER, "Tesselation evaluation shader"),
+		GEOMETRY_SHADER(GL_GEOMETRY_SHADER, "Geometry shader");
 		
 		private ShaderType(int glShaderTypeId, String description) {
 			this.glShaderTypeId = glShaderTypeId;
