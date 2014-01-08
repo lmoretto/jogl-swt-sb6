@@ -79,6 +79,13 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	protected String[] getShaderSourceLines(ShaderType shaderType) {
 		return null;
 	}
+	
+	protected int getProgram() {
+		if(useShaders)
+			return renderingProgram;
+		else
+			return -1;
+	}
 
 	@Override
 	public void createPartControl(Composite parent) {
