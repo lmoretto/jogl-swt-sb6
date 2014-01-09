@@ -33,6 +33,8 @@ import org.eclipse.ui.part.ViewPart;
 import com.jogamp.opengl.swt.GLCanvas;
 
 public abstract class JOGLView extends ViewPart implements GLEventListener{
+	private long initTime;
+	
 	public static enum ShaderType {
 		VERTEX_SHADER(GL_VERTEX_SHADER, "Vertex shader"),
 		FRAGMENT_SHADER(GL_FRAGMENT_SHADER, "Fragment shader"),
@@ -75,6 +77,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	protected abstract void render(GL4 gl);
 	protected abstract void startup(GL4 gl);
 	protected abstract void shutdown(GL4 gl);
+	protected abstract void resize(GL4 gl, int x, int y, int width, int height);
 	
 	protected String[] getShaderSourceLines(ShaderType shaderType) {
 		return null;
@@ -85,6 +88,10 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			return renderingProgram;
 		else
 			return -1;
+	}
+	
+	protected long getApplicationTime() {
+		return System.currentTimeMillis() - initTime;
 	}
 
 	@Override
@@ -190,6 +197,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	
 	@Override
 	public void init(GLAutoDrawable drawable) {
+		initTime = System.currentTimeMillis();
+		
 		System.out.println(drawable.getGL().getContext().getGLVersion());
 		if(!drawable.getGL().isGL4())
 			throw new RuntimeException("OpenGL 4 NOT supported on this machine");
@@ -206,8 +215,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 			int height) {
-		// TODO Auto-generated method stub
-		
+		resize((GL4) drawable.getGL(), x, y, width, height);
 	}
 	
 	private void createShaderPrograms(GL4 gl) {

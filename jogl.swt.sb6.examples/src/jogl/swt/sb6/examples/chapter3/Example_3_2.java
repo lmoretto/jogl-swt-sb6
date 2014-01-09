@@ -54,4 +54,7 @@ public class Example_3_2 extends JOGLView {
 			return super.getShaderSourceLines(shaderType);
 	}
 
+	@Override
+	protected void resize(GL4 gl, int x, int y, int width, int height) {
+	}
 }

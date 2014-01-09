@@ -63,4 +63,7 @@ public class Example_3_4 extends JOGLView {
 		}
 	}
 
+	@Override
+	protected void resize(GL4 gl, int x, int y, int width, int height) {
+	}
 }

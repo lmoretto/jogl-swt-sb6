@@ -29,4 +29,7 @@ public class Example_2_2 extends JOGLView {
 	protected void shutdown(GL4 gl) {
 	}
 
+	@Override
+	protected void resize(GL4 gl, int x, int y, int width, int height) {
+	}
 }
