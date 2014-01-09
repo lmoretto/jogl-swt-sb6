@@ -182,6 +182,10 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		black.put(3, 1.0f);
 		gl.glClearBufferfv(GL_COLOR, 0, black);
 		
+		FloatBuffer one = FloatBuffer.allocate(1);
+		one.put(0, 1.0f);
+		gl.glClearBufferfv(GL_DEPTH, 0, one);
+		
 		render(gl);
 	}
 
