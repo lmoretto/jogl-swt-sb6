@@ -2,12 +2,9 @@ package jogl.swt.utils.views;
 
 import static javax.media.opengl.GL4.*;
 
-import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
-import java.util.Vector;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -18,10 +15,12 @@ import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
-import javax.media.opengl.glu.GLU;
 
-import jogl.swt.utils.math.GLView;
+import jogl.swt.utils.GLUtils;
+import jogl.swt.utils.GLUtils.ProjectionType;
+import jogl.swt.utils.GLUtils.ShaderType;
 import jogl.swt.utils.math.Matrix4f;
+import jogl.swt.utils.math.MatrixUtils;
 import jogl.swt.utils.math.Vec3f;
 
 import org.eclipse.swt.SWT;
@@ -41,35 +40,6 @@ import org.eclipse.ui.part.ViewPart;
 import com.jogamp.opengl.swt.GLCanvas;
 
 public abstract class JOGLView extends ViewPart implements GLEventListener{
-	public static enum ShaderType {
-		VERTEX_SHADER(GL_VERTEX_SHADER, "Vertex shader"),
-		FRAGMENT_SHADER(GL_FRAGMENT_SHADER, "Fragment shader"),
-		TESS_CONTROL_SHADER(GL_TESS_CONTROL_SHADER, "Tesselation control shader"),
-		TESS_EVALUATION_SHADER(GL_TESS_EVALUATION_SHADER, "Tesselation evaluation shader"),
-		GEOMETRY_SHADER(GL_GEOMETRY_SHADER, "Geometry shader");
-		
-		private ShaderType(int glShaderTypeId, String description) {
-			this.glShaderTypeId = glShaderTypeId;
-			this.description = description;
-		}
-		
-		private int getGlShaderTypeId() {
-			return glShaderTypeId;
-		}
-		
-		private String getDescription() {
-			return description;
-		}
-		
-		private int glShaderTypeId;
-		private String description;
-	}
-	
-	public static enum ProjectionType {
-		// ORTOGRAPHIC,
-		PERSPECTIVE
-	}
-	
 	private long initTime;
 	
 	private Matrix4f perspective;
@@ -89,12 +59,17 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 
 	private ScheduledFuture<?> future;
 
-	private int renderingProgram;
-
 	private boolean useShaders = false;
 	
-	private GLU glu = new GLU();
+	private int implementationRenderingProgram;
 	
+	private int axisRenderingProgram;
+	private int[] vertexArray = new int[1];
+	private int mvMatrixLoc;
+	private int projMatrixLoc;
+	private int posLoc;
+	private int[] buffers;
+
 	protected abstract void render(GL4 gl);
 	protected abstract void startup(GL4 gl);
 	protected abstract void shutdown(GL4 gl);
@@ -106,7 +81,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	
 	protected int getProgram() {
 		if(useShaders)
-			return renderingProgram;
+			return implementationRenderingProgram;
 		else
 			return -1;
 	}
@@ -206,7 +181,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		final GL4 gl = (GL4) drawable.getGL();
 		
 		if(useShaders)
-			gl.glUseProgram(renderingProgram);
+			gl.glUseProgram(implementationRenderingProgram);
 		
 		FloatBuffer black = FloatBuffer.allocate(4);
 		black.put(0, 0.0f);
@@ -220,14 +195,20 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		gl.glClearBufferfv(GL_DEPTH, 0, one);
 		
 		render(gl);
+		
+		drawAxes(gl);
 	}
 
 	@Override
 	public void dispose(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
 		
-		if(useShaders)
-			gl.glDeleteProgram(renderingProgram);
+		if(useShaders) {
+			gl.glDeleteProgram(implementationRenderingProgram);
+		}
+		
+		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
+		gl.glDeleteProgram(axisRenderingProgram);
 		
 		shutdown(gl);
 	}
@@ -250,159 +231,120 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		createShaderPrograms(gl4);
 		
 		startup(gl4);
+		
+		gl4.glGenVertexArrays(vertexArray.length, vertexArray, 0);
+		gl4.glBindVertexArray(vertexArray[0]);
+		
+		gl4.glEnable(GL_DEPTH_TEST);
+		gl4.glDepthFunc(GL_LEQUAL);
+		
+		buffers = new int[1];
+		gl4.glGenBuffers(buffers.length, buffers, 0);
+		gl4.glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+		
+		FloatBuffer buffer = FloatBuffer.wrap(AXIS_VERTEX_POSITIONS);
+		gl4.glBufferData(GL_ARRAY_BUFFER, buffer.limit() * 4, buffer, GL_STATIC_DRAW);
+		
+		//	in vec4 position
+		posLoc = gl4.glGetAttribLocation(axisRenderingProgram, "position");
+		gl4.glVertexAttribPointer(posLoc, 3, GL_FLOAT, false, 0, 0);
+		gl4.glEnableVertexAttribArray(posLoc);
+		
+		/*
+			uniform mat4 mv_matrix;
+			uniform mat4 proj_matrix;
+		 */
+		mvMatrixLoc = gl4.glGetUniformLocation(axisRenderingProgram, "mv_matrix");
+		projMatrixLoc = gl4.glGetUniformLocation(axisRenderingProgram, "proj_matrix");
 	}
 
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 			int height) {
 		float aspect = (float) width / (float) height;
-		perspective = GLView.perspective(50.0f, aspect, 0.1f, 1000.0f);
+		perspective = MatrixUtils.perspective(50.0f, aspect, 0.1f, 1000.0f);
 		
 		resize((GL4) drawable.getGL(), x, y, width, height);
 	}
 	
+	private void drawAxes(GL4 gl) {
+		if(axisRenderingProgram != -1) {
+			gl.glUseProgram(axisRenderingProgram);
+			Matrix4f mvMatrix = Matrix4f.multiplyAll(
+					getLookAtMatrix(), 
+					Matrix4f.identity);
+			
+			gl.glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+			gl.glVertexAttribPointer(posLoc, 3, GL_FLOAT, false, 0, 0);
+			gl.glEnableVertexAttribArray(posLoc);
+			
+			gl.glUniformMatrix4fv(mvMatrixLoc, 1, false, mvMatrix.toArray(), 0);
+			gl.glUniformMatrix4fv(projMatrixLoc, 1, false, getDefaultProjectionMatrix(ProjectionType.PERSPECTIVE).toArray(), 0);
+			
+			gl.glLineWidth(2.0f);
+			gl.glDrawArrays(GL_LINES, 0, 36);
+		}
+	}
+	
 	private void createShaderPrograms(GL4 gl) {
+		cretaImplementationProgram(gl);
+		createAxisProgram(gl);
+	}
+	
+	private void createAxisProgram(GL4 gl) {
+		String[] vShaderSource = GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/axisV.glsl"));
+		String[] fShaderSource = GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/axisF.glsl"));
+		
+		int vShader = GLUtils.compileShader(vShaderSource, gl, ShaderType.VERTEX_SHADER);
+		
+		if(vShader != -1) {
+			int fShader = GLUtils.compileShader(fShaderSource, gl, ShaderType.FRAGMENT_SHADER);
+			
+			if(fShader != -1) {
+				axisRenderingProgram = GLUtils.compileProgram(new Integer[]{vShader, fShader}, gl);
+				
+				gl.glDeleteShader(vShader);
+				gl.glDeleteShader(fShader);
+			}
+			else {
+				gl.glDeleteShader(vShader);
+			}
+		}
+	}
+	
+	private void cretaImplementationProgram(GL4 gl) {
 		List<Integer> compiledShaders = new ArrayList<Integer>();
 		
 		for(ShaderType shaderType : ShaderType.values()) {
 			String[] shaderSource = getShaderSourceLines(shaderType);
 			
 			if(shaderSource != null) {
-				int[] shaderCompiled = new int[1];
+				int shader = GLUtils.compileShader(shaderSource, gl, shaderType);
 				
-				int[] lengths = new int[shaderSource.length];
-				for (int i = 0; i < shaderSource.length; i++) {
-					lengths[i] = shaderSource[i].length();
-				}
-				
-				int shader = gl.glCreateShader(shaderType.getGlShaderTypeId());
-				gl.glShaderSource(shader, shaderSource.length, shaderSource, lengths, 0);
-				gl.glCompileShader(shader);
-				
-				checkOpenGLError(gl);
-				gl.glGetShaderiv(shader, GL_COMPILE_STATUS, shaderCompiled, 0);
-				if(shaderCompiled[0] == 1) {
-					System.out.println(shaderType.getDescription() + " compilation succeded.");
+				if(shader != -1)
+					//In caso di successo
 					compiledShaders.add(shader);
-				}
 				else {
-					System.out.println(shaderType.getDescription() + " compilation failed.");
-					printShaderLog(gl, shader);
-					
+					//In caso di errore
 					for(Integer previousShader : compiledShaders)
 						gl.glDeleteShader(previousShader);
-					
-					gl.glDeleteShader(shader);
-					checkOpenGLError(gl);
 					return;
 				}
 			}
 		}
 		
 		if(compiledShaders.size() > 0) {
-			int[] progLinked = new int[1];
-						
-			renderingProgram = gl.glCreateProgram();
-			
-			for(Integer shader : compiledShaders)
-				gl.glAttachShader(renderingProgram, shader);
-			
-			gl.glLinkProgram(renderingProgram);
+			implementationRenderingProgram = GLUtils.compileProgram(compiledShaders.toArray(new Integer[0]), gl);
 			
 			for(Integer shader : compiledShaders)
 				gl.glDeleteShader(shader);
 			
-			checkOpenGLError(gl);
-			gl.glGetProgramiv(renderingProgram, GL_LINK_STATUS, progLinked, 0);
-			if(progLinked[0] == 1) {
-				System.out.println("Program linking succeded.");
-			}
-			else {
-				System.out.println("Program linking failed.");
-				printProgramLog(gl, renderingProgram);
-				gl.glDeleteProgram(renderingProgram);
-				checkOpenGLError(gl);
-				return;
-			}
-			
-			useShaders = true;
+			if(implementationRenderingProgram != -1)
+				useShaders = true;
 		}
 	}
 	
-	public static String[] readShaderSource(InputStream is) {
-		String[] ret = null;
-		
-		if(is != null) {
-			Vector<String> lines = new Vector<String>();
-			Scanner sc;
-			sc = new Scanner(is);
-			
-			while(sc.hasNext()) {
-				lines.addElement(sc.nextLine());
-			}
-			
-			sc.close();
-			
-			ret = new String[lines.size()];
-			
-			for(int i = 0; i < lines.size(); i++) {
-				ret[i] = lines.elementAt(i) + "\n";
-			}
-		}
-		
-		return ret;
-	}
-	
-	//Error utilities
-	public boolean checkOpenGLError(GL4 gl) {
-		boolean foundError = false;
-		
-		int glErr = gl.glGetError();
-		
-		while(glErr != GL_NO_ERROR) {
-			System.err.println("glError: " + glu.gluErrorString(glErr));
-			foundError = true;
-			glErr = gl.glGetError();
-		}
-		
-		return foundError;
-	}
-	
-	public void printShaderLog(GL4 gl, int shader) {
-		int[] len = new int[1];
-		int[] charsWritten = new int[1];
-		byte[] log = null;
-		
-		//Get the length of the shader compilation log
-		gl.glGetShaderiv(shader, GL_INFO_LOG_LENGTH, len, 0);
-		
-		if(len[0] > 0) {
-			log = new byte[len[0]];
-			gl.glGetShaderInfoLog(shader, len[0], charsWritten, 0, log, 0);
-			System.out.println("Shader Info Log:");
-			for(int i = 0; i < log.length; i++) {
-				System.out.print((char) log[i]);
-			}
-		}
-	}
-	
-	public void printProgramLog(GL4 gl, int program) {
-		int[] len = new int[1];
-		int[] charsWritten = new int[1];
-		byte[] log = null;
-		
-		//Get the length of the program linking log
-		gl.glGetProgramiv(program, GL_INFO_LOG_LENGTH, len, 0);
-		
-		if(len[0] > 0) {
-			log = new byte[len[0]];
-			gl.glGetProgramInfoLog(program, len[0], charsWritten, 0, log, 0);
-			System.out.println("Program Info Log:");
-			for(int i = 0; i < log.length; i++) {
-				System.out.print((char) log[i]);
-			}
-		}
-	}
+	//CAMERA UTILITIES
 	
 	private final KeyListener keyListener = new KeyListener() {
 		
@@ -563,7 +505,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 				-forward.x, -forward.y, -forward.z, 0,
 				0, 0, 0, 1);
 		
-		lookAt = lookAt.mult(GLView.translate(-camera.x, -camera.y, -camera.z));
+		lookAt = lookAt.mult(MatrixUtils.translate(-camera.x, -camera.y, -camera.z));
 	}
 	
 	private Vec3f[] computeCamerBase() {
@@ -596,5 +538,16 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private static final int CAMERA_ROTATION_ANGLE_STEP = 5;
 	private static final int MIN_UP_DOWN = -89;
 	private static final int MAX_UP_DOWN = 89;
+	
+	private static final float[] AXIS_VERTEX_POSITIONS = {
+		0.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		
+		0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		
+		0.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+	};
 
 }

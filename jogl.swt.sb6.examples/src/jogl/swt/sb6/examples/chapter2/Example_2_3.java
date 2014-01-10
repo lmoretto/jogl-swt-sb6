@@ -4,11 +4,10 @@ import static javax.media.opengl.GL4.*;
 
 import javax.media.opengl.GL4;
 
+import jogl.swt.utils.GLUtils.ShaderType;
 import jogl.swt.utils.views.JOGLView;
 
 public class Example_2_3 extends JOGLView {
-	private int[] vertexArray = new int[1];
-	
 	private static final String[] V_SHADER_SOURCE = { 
 			"#version 430 core								\n",
 			"void main(void) {								\n",
@@ -37,13 +36,10 @@ public class Example_2_3 extends JOGLView {
 
 	@Override
 	protected void startup(GL4 gl) {
-		gl.glGenVertexArrays(vertexArray.length, vertexArray, 0);
-		gl.glBindVertexArray(vertexArray[0]);
 	}
 
 	@Override
 	protected void shutdown(GL4 gl) {
-		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
 	}
 	
 	@Override

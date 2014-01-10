@@ -6,11 +6,11 @@ import java.nio.FloatBuffer;
 
 import javax.media.opengl.GL4;
 
+import jogl.swt.utils.GLUtils;
+import jogl.swt.utils.GLUtils.ShaderType;
 import jogl.swt.utils.views.JOGLView;
 
 public class Example_3_4 extends JOGLView {
-	private int[] vertexArray = new int[1];
-
 	@Override
 	protected void render(GL4 gl) {
 		long currentTime = System.currentTimeMillis();
@@ -35,29 +35,25 @@ public class Example_3_4 extends JOGLView {
 
 	@Override
 	protected void startup(GL4 gl) {
-		gl.glGenVertexArrays(vertexArray.length, vertexArray, 0);
-		gl.glBindVertexArray(vertexArray[0]);
-		
 		gl.glPatchParameteri(GL_PATCH_VERTICES, 3);
 		gl.glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	}
 
 	@Override
 	protected void shutdown(GL4 gl) {
-		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
 	}
 	
 	@Override
 	protected String[] getShaderSourceLines(ShaderType shaderType) {
 		switch (shaderType) {
 		case VERTEX_SHADER:
-			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/vshader_3_3.glsl"));
+			return GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/vshader_3_3.glsl"));
 		case FRAGMENT_SHADER:
-			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/fshader_3_3.glsl"));
+			return GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/fshader_3_3.glsl"));
 		case TESS_CONTROL_SHADER:
-			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/tess_control_shader_3_4.glsl"));
+			return GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/tess_control_shader_3_4.glsl"));
 		case TESS_EVALUATION_SHADER:
-			return readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/tess_evaluation_shader_3_4.glsl"));
+			return GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/chapter3/tess_evaluation_shader_3_4.glsl"));
 		default:
 			return super.getShaderSourceLines(shaderType);
 		}
