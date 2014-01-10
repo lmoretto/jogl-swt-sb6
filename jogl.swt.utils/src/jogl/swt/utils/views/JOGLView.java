@@ -40,6 +40,14 @@ import org.eclipse.ui.part.ViewPart;
 import com.jogamp.opengl.swt.GLCanvas;
 
 public abstract class JOGLView extends ViewPart implements GLEventListener{
+	public JOGLView() {
+	}
+	//Viewport value
+	private int lowerLeftX;
+	private int lowerLeftY;
+	private int width;
+	private int height;
+	
 	private long initTime;
 	
 	private Matrix4f perspective;
@@ -50,6 +58,10 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private int lastAngleUpDown;
 	private int lastAngleLeftRight;
 	private Matrix4f lookAt;
+	private Vec3f axisCamera;
+	private Matrix4f axisLookAt;
+	
+	private boolean showAxis = false;
 	
 	private GLCanvas glCanvas;
 	
@@ -122,6 +134,17 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		RowLayout rl_buttonsContainer = new RowLayout(SWT.HORIZONTAL);
 		buttonsContainer.setLayout(rl_buttonsContainer);
 		
+		Button btnDrawAxis = new Button(buttonsContainer, SWT.CHECK | SWT.CENTER);
+		btnDrawAxis.setText("Draw axis");
+		btnDrawAxis.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				
+				showAxis = !showAxis;
+			}
+		});
+		
 		Button toggleBackground = new Button(buttonsContainer, SWT.NONE);
 		toggleBackground.setText("Toggle Background");
 		toggleBackground.addSelectionListener(new SelectionAdapter() {
@@ -180,6 +203,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	public void display(GLAutoDrawable drawable) {
 		final GL4 gl = (GL4) drawable.getGL();
 		
+		gl.glViewport(lowerLeftX, lowerLeftY, width, height);
+		
 		if(useShaders)
 			gl.glUseProgram(implementationRenderingProgram);
 		
@@ -196,7 +221,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		
 		render(gl);
 		
-		drawAxes(gl);
+		if(showAxis)
+			drawAxes(gl);
 	}
 
 	@Override
@@ -261,6 +287,11 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width,
 			int height) {
+		this.width = width;
+		this.height = height;
+		this.lowerLeftX = x;
+		this.lowerLeftY = y;
+		
 		float aspect = (float) width / (float) height;
 		perspective = MatrixUtils.perspective(50.0f, aspect, 0.1f, 1000.0f);
 		
@@ -269,9 +300,11 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	
 	private void drawAxes(GL4 gl) {
 		if(axisRenderingProgram != -1) {
+			gl.glViewport(lowerLeftX, lowerLeftY, width/5, height/5);
+			
 			gl.glUseProgram(axisRenderingProgram);
 			Matrix4f mvMatrix = Matrix4f.multiplyAll(
-					getLookAtMatrix(), 
+					axisLookAt, 
 					Matrix4f.identity);
 			
 			gl.glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
@@ -499,11 +532,16 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		Vec3f sideVec = base[1];
 		Vec3f newUp = base[2];
 		
+		Vec3f axisTarget = new Vec3f(0, 0, 0);
+		axisCamera = axisTarget.subtract(forward.multiply(3.0f));
+		
 		lookAt = new Matrix4f(
 				sideVec.x, sideVec.y, sideVec.z, 0,
 				newUp.x, newUp.y, newUp.z, 0,
 				-forward.x, -forward.y, -forward.z, 0,
 				0, 0, 0, 1);
+		
+		axisLookAt = lookAt.mult(MatrixUtils.translate(-axisCamera.x, -axisCamera.y, -axisCamera.z));
 		
 		lookAt = lookAt.mult(MatrixUtils.translate(-camera.x, -camera.y, -camera.z));
 	}
