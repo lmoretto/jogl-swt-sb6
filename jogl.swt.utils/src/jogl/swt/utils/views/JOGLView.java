@@ -300,6 +300,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	
 	private void drawAxes(GL4 gl) {
 		if(axisRenderingProgram != -1) {
+			gl.glClear(GL_DEPTH_BUFFER_BIT);
+			
 			gl.glViewport(lowerLeftX, lowerLeftY, width/5, height/5);
 			
 			gl.glUseProgram(axisRenderingProgram);
