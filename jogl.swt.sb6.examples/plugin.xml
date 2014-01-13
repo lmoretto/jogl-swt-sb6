@@ -127,6 +127,18 @@
             name="Example_5_alien_rain"
             restorable="true">
       </view>
+      <category
+            id="jogl.swt.sb6.examples.chapter7"
+            name="Chapter 7"
+            parentCategory="jogl.swt.sb6.examples.maincategory">
+      </category>
+      <view
+            category="jogl.swt.sb6.examples.chapter7"
+            class="jogl.swt.sb6.examples.chapter7.Example_7_1"
+            id="jogl.swt.sb6.examples.chapter7.example_7_1"
+            name="Example_7_1"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
