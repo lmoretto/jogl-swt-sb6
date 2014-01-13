@@ -52,6 +52,8 @@ public final class GLUtils {
 		gl.glLinkProgram(program);
 		
 		checkOpenGLError(gl);
+		
+		printProgramLog(gl, program);
 		gl.glGetProgramiv(program, GL_LINK_STATUS, progLinked, 0);
 		if(progLinked[0] == 1) {
 			System.out.println("Program linking succeded.");
@@ -60,7 +62,6 @@ public final class GLUtils {
 		}
 		else {
 			System.out.println("Program linking failed.");
-			printProgramLog(gl, program);
 			gl.glDeleteProgram(program);
 			checkOpenGLError(gl);
 			return -1;
@@ -80,6 +81,8 @@ public final class GLUtils {
 		gl.glCompileShader(shader);
 		
 		checkOpenGLError(gl);
+		
+		printShaderLog(gl, shader);
 		gl.glGetShaderiv(shader, GL_COMPILE_STATUS, shaderCompiled, 0);
 		if(shaderCompiled[0] == 1) {
 			System.out.println(shaderType.getDescription() + " compilation succeded.");
@@ -87,8 +90,6 @@ public final class GLUtils {
 		}
 		else {
 			System.out.println(shaderType.getDescription() + " compilation failed.");
-			printShaderLog(gl, shader);
-			
 			gl.glDeleteShader(shader);
 			checkOpenGLError(gl);
 			return -1;
