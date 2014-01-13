@@ -7,6 +7,13 @@
             id="jogl.swt.sb6.examples.maincategory"
             name="OpenGL SuperBible 6 Code Examples">
       </category>
+      <view
+            category="jogl.swt.sb6.examples.maincategory"
+            class="jogl.swt.sb6.examples.StaticCube"
+            id="jogl.swt.sb6.examples.example_static_cube"
+            name="Cube"
+            restorable="true">
+      </view>
       <category
             id="jogl.swt.sb6.examples.chapter2"
             name="Chapter 2"
