@@ -327,6 +327,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	}
 	
 	private void createAxisProgram(GL4 gl) {
+		System.out.println("Creating base class AXIS rendering program");
 		String[] vShaderSource = GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/axisV.glsl"));
 		String[] fShaderSource = GLUtils.readShaderSource(this.getClass().getResourceAsStream("/shaders/axisF.glsl"));
 		
@@ -348,6 +349,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	}
 	
 	private void cretaImplementationProgram(GL4 gl) {
+		System.out.println("Creating implementation class rendering program");
 		List<Integer> compiledShaders = new ArrayList<Integer>();
 		
 		for(ShaderType shaderType : ShaderType.values()) {

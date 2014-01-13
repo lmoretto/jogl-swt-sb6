@@ -1,14 +1,6 @@
 package jogl.swt.utils;
 
-import static javax.media.opengl.GL.GL_NO_ERROR;
-import static javax.media.opengl.GL2ES2.GL_COMPILE_STATUS;
-import static javax.media.opengl.GL2ES2.GL_FRAGMENT_SHADER;
-import static javax.media.opengl.GL2ES2.GL_INFO_LOG_LENGTH;
-import static javax.media.opengl.GL2ES2.GL_LINK_STATUS;
-import static javax.media.opengl.GL2ES2.GL_VERTEX_SHADER;
-import static javax.media.opengl.GL3.GL_GEOMETRY_SHADER;
-import static javax.media.opengl.GL4.GL_TESS_CONTROL_SHADER;
-import static javax.media.opengl.GL4.GL_TESS_EVALUATION_SHADER;
+import static javax.media.opengl.GL4.*;
 
 import java.io.InputStream;
 import java.util.Scanner;
@@ -127,7 +119,8 @@ public final class GLUtils {
 		return ret;
 	}
 	
-	//Error utilities
+	//ERROR UTILITIES
+	
 	public static boolean checkOpenGLError(GL4 gl) {
 		boolean foundError = false;
 		

@@ -113,6 +113,13 @@
             name="Example_5_2"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter5"
+            class="jogl.swt.sb6.examples.chapter5.Example_5_alien_rain"
+            id="jogl.swt.sb6.examples.chapter5.example_5_alien_rain"
+            name="Example_5_alien_rain"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
