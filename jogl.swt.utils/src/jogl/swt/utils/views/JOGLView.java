@@ -238,6 +238,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		gl.glDeleteVertexArrays(vertexArray.length, vertexArray, 0);
 		gl.glDeleteProgram(axisRenderingProgram);
 		
+		gl.glDeleteBuffers(buffers.length, buffers, 0);
+		
 		shutdown(gl);
 	}
 	
