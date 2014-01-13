@@ -76,7 +76,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private int implementationRenderingProgram;
 	
 	private int axisRenderingProgram;
-	private int[] vertexArray = new int[1];
+	private int[] vertexArray = new int[2];
 	private int mvMatrixLoc;
 	private int projMatrixLoc;
 	private int posLoc;
@@ -203,6 +203,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	public void display(GLAutoDrawable drawable) {
 		final GL4 gl = (GL4) drawable.getGL();
 		
+		gl.glBindVertexArray(vertexArray[0]);
+		
 		gl.glViewport(lowerLeftX, lowerLeftY, width, height);
 		
 		if(useShaders)
@@ -256,13 +258,12 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		
 		createShaderPrograms(gl4);
 		
-		startup(gl4);
-		
 		gl4.glGenVertexArrays(vertexArray.length, vertexArray, 0);
 		gl4.glBindVertexArray(vertexArray[0]);
 		
-		gl4.glEnable(GL_DEPTH_TEST);
-		gl4.glDepthFunc(GL_LEQUAL);
+		startup(gl4);
+		
+		gl4.glBindVertexArray(vertexArray[1]);
 		
 		buffers = new int[1];
 		gl4.glGenBuffers(buffers.length, buffers, 0);
@@ -282,6 +283,9 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		 */
 		mvMatrixLoc = gl4.glGetUniformLocation(axisRenderingProgram, "mv_matrix");
 		projMatrixLoc = gl4.glGetUniformLocation(axisRenderingProgram, "proj_matrix");
+		
+		gl4.glEnable(GL_DEPTH_TEST);
+		gl4.glDepthFunc(GL_LEQUAL);
 	}
 
 	@Override
@@ -300,6 +304,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	
 	private void drawAxes(GL4 gl) {
 		if(axisRenderingProgram != -1) {
+			gl.glBindVertexArray(vertexArray[1]);
 			gl.glClear(GL_DEPTH_BUFFER_BIT);
 			
 			gl.glViewport(lowerLeftX, lowerLeftY, width/5, height/5);
@@ -317,7 +322,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			gl.glUniformMatrix4fv(projMatrixLoc, 1, false, getDefaultProjectionMatrix(ProjectionType.PERSPECTIVE).toArray(), 0);
 			
 			gl.glLineWidth(2.0f);
-			gl.glDrawArrays(GL_LINES, 0, 36);
+			gl.glDrawArrays(GL_LINES, 0, 6);
 		}
 	}
 	

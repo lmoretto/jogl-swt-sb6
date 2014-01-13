@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (location = 1) in int alien_index;
+layout (location = 0) in int alien_index;
 
 out VS_OUT {
 	flat int alien;
