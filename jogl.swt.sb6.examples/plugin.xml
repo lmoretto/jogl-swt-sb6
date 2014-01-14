@@ -14,6 +14,13 @@
             name="Cube"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.maincategory"
+            class="jogl.swt.sb6.examples.SB6MRender"
+            id="jogl.swt.sb6.examples.sb6mrender"
+            name="SB6MRender"
+            restorable="true">
+      </view>
       <category
             id="jogl.swt.sb6.examples.chapter2"
             name="Chapter 2"
