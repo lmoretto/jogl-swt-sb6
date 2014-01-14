@@ -111,6 +111,14 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	protected Matrix4f getLookAtMatrix() {
 		return lookAt;
 	}
+	
+	protected int getWidth() {
+		return width;
+	}
+	
+	protected int getHeight() {
+		return height;
+	}
 
 	@Override
 	public void createPartControl(Composite parent) {
