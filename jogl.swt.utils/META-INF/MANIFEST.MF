@@ -12,4 +12,5 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Export-Package: jogl.swt.utils,
  jogl.swt.utils.math,
+ jogl.swt.utils.sb6m,
  jogl.swt.utils.views
