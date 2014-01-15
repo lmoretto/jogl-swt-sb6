@@ -342,9 +342,10 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 					
 					@Override
 					public void run() {
-						fpsLabel.setText(String.format("%.3f mspf (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
-						fpsLabel.getParent().layout();
-						//System.out.println(String.format("%.3f ms/frame (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
+						if(!fpsLabel.isDisposed()) {
+							fpsLabel.setText(String.format("%.3f mspf (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
+							fpsLabel.getParent().layout();
+						}
 					}
 				});
 				
