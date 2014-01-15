@@ -41,7 +41,7 @@ import com.jogamp.opengl.swt.GLCanvas;
 
 import org.eclipse.swt.widgets.Label;
 
-public abstract class JOGLView extends ViewPart implements GLEventListener{
+public abstract class JOGLView extends ViewPart implements GLEventListener, KeyListener{
 	//Viewport value
 	private int lowerLeftX;
 	private int lowerLeftY;
@@ -140,7 +140,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		glCanvas = new GLCanvas(parent, SWT.NONE, caps, null);
 		glCanvas.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		glCanvas.addGLEventListener(this);
-		glCanvas.addKeyListener(keyListener);
+		glCanvas.addKeyListener(this);
 		glCanvas.addMouseWheelListener(mouseWheelListener);
 		
 		Composite buttonsContainer = new Composite(parent, SWT.NONE);
@@ -440,62 +440,58 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	}
 	
 	//CAMERA UTILITIES
-	
-	private final KeyListener keyListener = new KeyListener() {
+	@Override
+	public void keyPressed(KeyEvent e) {
+		boolean ctrlPressed = (e.stateMask & SWT.CTRL) != 0;
 		
-		@Override
-		public void keyPressed(KeyEvent e) {
-			boolean ctrlPressed = (e.stateMask & SWT.CTRL) != 0;
-			
-			Vec3f direction = target.subtract(camera);
-			float distanceToTarget = direction.length();
-			
-			switch (e.keyCode) {
-			case SWT.ARROW_UP:
-				if(ctrlPressed) {
-					translateCameraUpDown(true);
-				}
-				else {
-					rotateCameraUp(distanceToTarget);
-				}
-				buildLookAt();
-				break;
-			case SWT.ARROW_DOWN:
-				if(ctrlPressed) {
-					translateCameraUpDown(false);
-				}
-				else {
-					rotateCameraDown(distanceToTarget);
-				}
-				buildLookAt();
-				break;
-			case SWT.ARROW_LEFT:
-				if(ctrlPressed) {
-					translateCameraRightLeft(false);
-				}
-				else {
-					rotateCameraLeft(distanceToTarget);
-				}
-				buildLookAt();
-				break;
-			case SWT.ARROW_RIGHT:
-				if(ctrlPressed) {
-					translateCameraRightLeft(true);
-				}
-				else {
-					rotateCameraRight(distanceToTarget);
-				}
-				buildLookAt();
-				break;
-			default:
-				break;
+		Vec3f direction = target.subtract(camera);
+		float distanceToTarget = direction.length();
+		
+		switch (e.keyCode) {
+		case SWT.ARROW_UP:
+			if(ctrlPressed) {
+				translateCameraUpDown(true);
 			}
+			else {
+				rotateCameraUp(distanceToTarget);
+			}
+			buildLookAt();
+			break;
+		case SWT.ARROW_DOWN:
+			if(ctrlPressed) {
+				translateCameraUpDown(false);
+			}
+			else {
+				rotateCameraDown(distanceToTarget);
+			}
+			buildLookAt();
+			break;
+		case SWT.ARROW_LEFT:
+			if(ctrlPressed) {
+				translateCameraRightLeft(false);
+			}
+			else {
+				rotateCameraLeft(distanceToTarget);
+			}
+			buildLookAt();
+			break;
+		case SWT.ARROW_RIGHT:
+			if(ctrlPressed) {
+				translateCameraRightLeft(true);
+			}
+			else {
+				rotateCameraRight(distanceToTarget);
+			}
+			buildLookAt();
+			break;
+		default:
+			break;
 		}
-		
-		@Override
-		public void keyReleased(KeyEvent e) {
-		}
-	};
+	}
+	
+	@Override
+	public void keyReleased(KeyEvent e) {
+	}
 	
 	private final MouseWheelListener mouseWheelListener = new MouseWheelListener() {
 
