@@ -32,16 +32,16 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.part.ViewPart;
 
 import com.jogamp.opengl.swt.GLCanvas;
 
+import org.eclipse.swt.widgets.Label;
+
 public abstract class JOGLView extends ViewPart implements GLEventListener{
-	public JOGLView() {
-	}
 	//Viewport value
 	private int lowerLeftX;
 	private int lowerLeftY;
@@ -60,6 +60,12 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 	private Matrix4f lookAt;
 	private Vec3f axisCamera;
 	private Matrix4f axisLookAt;
+	
+	//frame rate
+	private Label fpsLabel;
+	private boolean started = false;
+	private int numFrames;
+	private double lastTime;
 	
 	private boolean showAxis = false;
 	
@@ -127,7 +133,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		GLProfile glProfile = GLProfile.get(GLProfile.GL4);
 		
 		GLCapabilities caps = new GLCapabilities(glProfile);
-		//caps.setHardwareAccelerated(true);
+		caps.setHardwareAccelerated(true);
 		caps.setDoubleBuffered(true);
 		//caps.setNumSamples(16);
 		
@@ -138,9 +144,11 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		glCanvas.addMouseWheelListener(mouseWheelListener);
 		
 		Composite buttonsContainer = new Composite(parent, SWT.NONE);
-		buttonsContainer.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
-		RowLayout rl_buttonsContainer = new RowLayout(SWT.HORIZONTAL);
-		buttonsContainer.setLayout(rl_buttonsContainer);
+		buttonsContainer.setLayout(new GridLayout(4, false));
+		buttonsContainer.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		
+		fpsLabel = new Label(buttonsContainer, SWT.NONE);
+		fpsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
 		Button btnDrawAxis = new Button(buttonsContainer, SWT.CHECK | SWT.CENTER);
 		btnDrawAxis.setText("Draw axis");
@@ -153,6 +161,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 			}
 		});
 		
+		/*
 		Button toggleBackground = new Button(buttonsContainer, SWT.NONE);
 		toggleBackground.setText("Toggle Background");
 		toggleBackground.addSelectionListener(new SelectionAdapter() {
@@ -161,6 +170,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 				super.widgetSelected(e);
 			}
 		});
+		*/
 		
 		final Button pauseResumeButton = new Button(buttonsContainer, SWT.NONE);
 		pauseResumeButton.setText("Pause");
@@ -178,6 +188,7 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 					future = timer.scheduleAtFixedRate(displayTask, 0, 16, TimeUnit.MILLISECONDS);
 					pauseResumeButton.setText("Pause");
 				}
+				pauseResumeButton.getParent().layout();
 			}
 		});
 		
@@ -209,6 +220,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 
 	@Override
 	public void display(GLAutoDrawable drawable) {
+		computeFps();
+		
 		final GL4 gl = (GL4) drawable.getGL();
 		
 		gl.glBindVertexArray(vertexArray[0]);
@@ -310,6 +323,35 @@ public abstract class JOGLView extends ViewPart implements GLEventListener{
 		perspective = MatrixUtils.perspective(50.0f, aspect, 0.1f, 1000.0f);
 		
 		resize((GL4) drawable.getGL(), x, y, width, height);
+	}
+	
+	private void computeFps() {
+		if(!started) {
+			started = true;
+			lastTime = System.currentTimeMillis();
+			numFrames = 0;
+		}
+		else {
+			double currentTime = System.currentTimeMillis();
+			numFrames++;
+			
+			final double timeDiff = currentTime - lastTime;
+			
+			if(timeDiff >= 1000.0) {
+				Display.getDefault().syncExec(new Runnable() {
+					
+					@Override
+					public void run() {
+						fpsLabel.setText(String.format("%.3f mspf (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
+						fpsLabel.getParent().layout();
+						//System.out.println(String.format("%.3f ms/frame (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
+					}
+				});
+				
+				numFrames = 0;
+				lastTime += timeDiff;
+			}
+		}
 	}
 	
 	private void drawAxes(GL4 gl) {
