@@ -186,6 +186,13 @@
             name="Example_8_1"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter8"
+            class="jogl.swt.sb6.examples.chapter8.Example_8_2"
+            id="jogl.swt.sb6.examples.chapter8.example_8_2"
+            name="Example_8_2"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
