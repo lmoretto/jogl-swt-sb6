@@ -193,6 +193,13 @@
             name="Example_8_2"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.maincategory"
+            class="jogl.swt.sb6.examples.TeapotView"
+            id="jogl.swt.sb6.examples.example_teapot_tesselation"
+            name="Teapot"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
