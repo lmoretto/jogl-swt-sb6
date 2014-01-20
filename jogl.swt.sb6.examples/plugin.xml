@@ -207,6 +207,13 @@
             name="Example_8_3"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.maincategory"
+            class="jogl.swt.sb6.examples.WireframeGS"
+            id="jogl.swt.sb6.examples.example_geometryshader_wireframe"
+            name="WireframeGS"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
