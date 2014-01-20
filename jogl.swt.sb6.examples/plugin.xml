@@ -200,6 +200,13 @@
             name="Teapot"
             restorable="true">
       </view>
+      <view
+            category="jogl.swt.sb6.examples.chapter8"
+            class="jogl.swt.sb6.examples.chapter8.Example_8_3"
+            id="jogl.swt.sb6.examples.chapter8.example_8_3"
+            name="Example_8_3"
+            restorable="true">
+      </view>
    </extension>
 
 </plugin>
