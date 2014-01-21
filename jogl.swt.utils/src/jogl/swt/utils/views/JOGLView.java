@@ -497,10 +497,14 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 
 		@Override
 		public void mouseScrolled(MouseEvent e) {
-			Vec3f direction = target.subtract(camera).normalize();
+			Vec3f direction = target.subtract(camera);
+			float distance = direction.length();
+			direction = direction.normalize();
 			
-			if(e.count > 0)
-				camera = camera.add(direction.multiply(0.2f));
+			if(e.count > 0) {
+				if(distance > 0.2f)
+					camera = camera.add(direction.multiply(0.2f));
+			}
 			else
 				camera = camera.add(direction.multiply(-0.2f));
 			buildLookAt();
