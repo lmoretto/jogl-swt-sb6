@@ -2,18 +2,23 @@ package jogl.swt.utils.views;
 
 import static javax.media.opengl.GL4.*;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.media.opengl.DebugGL4;
 import javax.media.opengl.GL4;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.GLEventListener;
+import javax.media.opengl.GLException;
 import javax.media.opengl.GLProfile;
 
 import jogl.swt.utils.GLUtils;
@@ -38,6 +43,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.part.ViewPart;
 
 import com.jogamp.opengl.swt.GLCanvas;
+import com.jogamp.opengl.util.GLBuffers;
+import com.jogamp.opengl.util.GLPixelBuffer;
+import com.jogamp.opengl.util.GLPixelBuffer.GLPixelAttributes;
+import com.jogamp.opengl.util.texture.TextureData;
+import com.jogamp.opengl.util.texture.TextureIO;
 
 import org.eclipse.swt.widgets.Label;
 
@@ -68,6 +78,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 	private double lastTime;
 	
 	private boolean showAxis = false;
+	
+	private AtomicBoolean screenshot = new AtomicBoolean(false);
 	
 	private GLCanvas glCanvas;
 	
@@ -147,6 +159,18 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		buttonsContainer.setLayout(new GridLayout(4, false));
 		buttonsContainer.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		
+		Button btnScreenshot = new Button(buttonsContainer, SWT.NONE);
+		btnScreenshot.setText("Screenshot");
+		btnScreenshot.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				super.widgetSelected(e);
+				
+				//TODO use OpenGL synchronization mechanisms
+				screenshot.set(true);
+			}
+		});
+		
 		fpsLabel = new Label(buttonsContainer, SWT.NONE);
 		fpsLabel.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		
@@ -216,6 +240,96 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		glCanvas.setFocus();
 	}
 	
+	private void takeScreenshot(GL4 gl) {
+		int viewportWidth = width;
+		int viewportHeight = height;
+		int viewportX = lowerLeftX;
+		int viewportY = lowerLeftY;
+		
+		int screenShotWidth = 1920;
+		int screenShotHeight = 1080;
+		
+		reshape(glCanvas, 0, 0, screenShotWidth, screenShotHeight);
+		
+		int[] frameBuffer = new int[1];
+		gl.glGenFramebuffers(1, frameBuffer, 0);
+		gl.glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer[0]);
+		
+		int[] colorTexture = new int[1];
+		gl.glGenTextures(1, colorTexture, 0);
+		gl.glBindTexture(GL_TEXTURE_2D, colorTexture[0]);
+		gl.glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, screenShotWidth, screenShotHeight);
+		
+		int[] depthTexture = new int[1];
+		gl.glGenTextures(1, depthTexture, 0);
+		gl.glBindTexture(GL_TEXTURE_2D, depthTexture[0]);
+		gl.glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, screenShotWidth, screenShotHeight);
+		
+		gl.glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, colorTexture[0], 0);
+		gl.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthTexture[0], 0);
+		
+		gl.glDrawBuffers(1, new int[]{GL_COLOR_ATTACHMENT0}, 0);
+		
+		gl.glViewport(0, 0, screenShotWidth, screenShotHeight);
+		
+		internalDisplay(gl);
+		
+		File screenshot = new File("screenshot.bmp");
+		File screenshotPng = new File("screenshot.png");
+		
+		/*
+		 * If the screenshot size matches the GLCanvas dimensions, this code would be sufficient
+		 * 
+		    GLReadBufferUtil util = new GLReadBufferUtil(false, false);
+			util.readPixels(gl, false);
+			util.write(screenshot);
+			util.write(screenshotPng);
+		 */
+		
+		/*
+		 * bytesPerPixel: 24
+		 * componentCount: 3
+		 * format: GL_RGB
+		 * type: GL_UNSIGNED_BYTE
+		 */
+		GLPixelAttributes pixelAttribs = GLPixelBuffer.defaultProviderNoRowStride.getAttributes(gl, /*componentCount*/3);
+		
+		final int tmp[] = new int[1];
+        final int readPixelSize = GLBuffers.sizeof(gl, tmp, pixelAttribs.bytesPerPixel, screenShotWidth, screenShotHeight, 1, true);
+        /* readPixelSize = ((screenShotWidth * 3 + 3) & ~3) * screenShotHeight; */
+
+        ByteBuffer buffer = ByteBuffer.allocate(readPixelSize);
+		
+		TextureData readTextureData = new TextureData(
+                gl.getGLProfile(),
+                GL_RGB,
+                screenShotWidth, screenShotHeight,
+                0,
+                pixelAttribs,
+                false, false,
+                false,//flipVertically,
+                buffer,
+                null /* Flusher */);
+		gl.glReadPixels(0, 0, screenShotWidth, screenShotHeight, pixelAttribs.format, pixelAttribs.type, buffer);
+		
+		try {
+			TextureIO.write(readTextureData, screenshot);
+			buffer.rewind();
+			TextureIO.write(readTextureData, screenshotPng);
+		} catch (GLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		gl.glDeleteTextures(1, colorTexture, 0);
+		gl.glDeleteTextures(1, depthTexture, 0);
+		gl.glDeleteFramebuffers(1, frameBuffer, 0);
+		gl.glBindTexture(GL_TEXTURE_2D, 0);
+		gl.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		reshape(glCanvas, viewportX, viewportY, viewportWidth, viewportHeight);
+	}
+	
 	/** GLEventListener methods **/
 
 	@Override
@@ -224,9 +338,18 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		
 		final GL4 gl = (GL4) drawable.getGL();
 		
-		gl.glBindVertexArray(vertexArray[0]);
+		//TODO use OpenGL synchronization mechanisms
+		if(screenshot.compareAndSet(true, false)) {
+			takeScreenshot(gl);
+		}
 		
 		gl.glViewport(lowerLeftX, lowerLeftY, width, height);
+		
+		internalDisplay(gl);
+	}
+	
+	private void internalDisplay(GL4 gl) {
+		gl.glBindVertexArray(vertexArray[0]);
 		
 		if(useShaders)
 			gl.glUseProgram(implementationRenderingProgram);
