@@ -77,6 +77,13 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 	private int numFrames;
 	private double lastTime;
 	
+	//Queries
+	// - pipeline latency
+	// - rendering time
+	// - primitive count
+	// - transform feedback written primitives
+	private int[] queries = new int[4];
+	
 	private boolean showAxis = false;
 	
 	private AtomicBoolean screenshot = new AtomicBoolean(false);
@@ -345,7 +352,21 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		
 		gl.glViewport(lowerLeftX, lowerLeftY, width, height);
 		
+		long[] startTimestamp = new long[1];
+		gl.glGetInteger64v(GL_TIMESTAMP, startTimestamp, 0);
+		gl.glQueryCounter(queries[0], GL_TIMESTAMP);
+		
+		gl.glBeginQuery(GL_TIME_ELAPSED, queries[1]);
+		gl.glBeginQuery(GL_PRIMITIVES_GENERATED, queries[2]);
+		gl.glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, queries[3]);
+		
 		internalDisplay(gl);
+		
+		gl.glEndQuery(GL_TIME_ELAPSED);
+		gl.glEndQuery(GL_PRIMITIVES_GENERATED);
+		gl.glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+		
+		printQueryResults(gl, startTimestamp[0]);
 	}
 	
 	private void internalDisplay(GL4 gl) {
@@ -383,6 +404,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		gl.glDeleteProgram(axisRenderingProgram);
 		
 		gl.glDeleteBuffers(buffers.length, buffers, 0);
+		
+		deleteQueries(gl);
 		
 		shutdown(gl);
 	}
@@ -432,6 +455,8 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		
 		gl4.glEnable(GL_DEPTH_TEST);
 		gl4.glDepthFunc(GL_LEQUAL);
+		
+		initQueries(gl4);
 	}
 
 	@Override
@@ -446,6 +471,35 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 		perspective = MatrixUtils.perspective(50.0f, aspect, 0.1f, 1000.0f);
 		
 		resize((GL4) drawable.getGL(), x, y, width, height);
+	}
+	
+	// Queries
+	private void initQueries(GL4 gl) {
+		gl.glGenQueries(queries.length, queries, 0);
+	}
+	
+	private void printQueryResults(GL4 gl, long startTimestamp) {
+		// 0 - pipeline latency
+		// 1 - rendering time
+		// 2 - primitive count
+		// 3 - transform feedback written primitives
+		long[] results = new long[4];
+		
+		gl.glGetQueryObjectui64v(queries[0], GL_QUERY_RESULT, results, 0);
+		gl.glGetQueryObjectui64v(queries[1], GL_QUERY_RESULT, results, 1);
+		gl.glGetQueryObjectui64v(queries[2], GL_QUERY_RESULT, results, 2);
+		gl.glGetQueryObjectui64v(queries[3], GL_QUERY_RESULT, results, 3);
+		
+		System.out.println("--------------------------------------------------------------");
+		System.out.println("Pipeline latency: " + (results[0] - startTimestamp) + " ns");
+		System.out.println("Rendering time: " + results[1] + " ns");
+		System.out.println("Primitives generated: " + results[2]);
+		System.out.println("Primitives written to transform feedback: " + results[3]);
+		System.out.println("--------------------------------------------------------------");
+	}
+	
+	private void deleteQueries(GL4 gl) {
+		gl.glDeleteQueries(queries.length, queries, 0);
 	}
 	
 	private void computeFps() {
