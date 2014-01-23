@@ -458,15 +458,16 @@ public abstract class JOGLView extends ViewPart implements GLEventListener, KeyL
 			double currentTime = System.currentTimeMillis();
 			numFrames++;
 			
-			final double timeDiff = currentTime - lastTime;
+			double timeDiff = currentTime - lastTime;
+			final double mspf = timeDiff / numFrames;
 			
 			if(timeDiff >= 1000.0) {
-				Display.getDefault().syncExec(new Runnable() {
+				Display.getDefault().asyncExec(new Runnable() {
 					
 					@Override
 					public void run() {
 						if(!fpsLabel.isDisposed()) {
-							fpsLabel.setText(String.format("%.3f mspf (%.3f fps)", timeDiff/numFrames, 1000.0/(timeDiff/numFrames)));
+							fpsLabel.setText(String.format("%.3f mspf (%.3f fps)", mspf, 1000.0/mspf));
 							fpsLabel.getParent().layout();
 						}
 					}
